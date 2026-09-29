@@ -20,12 +20,15 @@ func (s *Server) recovery(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) profile(w http.ResponseWriter, r *http.Request) {
-	gradient, err := s.plant.Profile.Gradient()
+	// Take one snapshot so readings, gradient and stability always describe
+	// the same generation; concurrent Put calls keep updating the profile.
+	snapshot := s.plant.Profile.Snapshot()
+	gradient, err := snapshot.Gradient()
 	if err != nil {
 		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"readings": s.plant.Profile.Ordered(), "gradient": gradient, "stable": s.plant.Profile.Stable(40)})
+	writeJSON(w, http.StatusOK, map[string]any{"readings": snapshot.Ordered(), "gradient": gradient, "stable": snapshot.Stable(40)})
 }
 
 func (s *Server) metrics(w http.ResponseWriter, r *http.Request) {
