@@ -20,12 +20,12 @@ func (s *Server) recovery(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) profile(w http.ResponseWriter, r *http.Request) {
-	gradient, err := s.plant.Profile.Gradient()
-	if err != nil {
-		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+	report := s.plant.Profile.Report(40)
+	if !report.GradientReady {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "profile needs at least two trays"})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"readings": s.plant.Profile.Ordered(), "gradient": gradient, "stable": s.plant.Profile.Stable(40)})
+	writeJSON(w, http.StatusOK, map[string]any{"readings": report.Readings, "gradient": report.Gradient, "stable": report.Stable})
 }
 
 func (s *Server) metrics(w http.ResponseWriter, r *http.Request) {
